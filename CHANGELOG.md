@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `conjurctl server` allows the operator to specify the admin user's password
+  via a file or STDIN using the optional `--password-file` flag.
+  [cyberark/conjur#2043](https://github.com/cyberark/conjur/issues/2043)
+- `conjurctl account` allows the operator to specify the admin user's password
+  via a file or STDIN using the optional `password_file` command argument.
+  [cyberark/conjur#2043](https://github.com/cyberark/conjur/issues/2043)
 
 ## [1.11.2] - 2021-02-02
 ### Added

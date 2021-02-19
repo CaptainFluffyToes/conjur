@@ -36,11 +36,23 @@ def connect
   true
 end
 
+def file_input(path)
+  if path == '-'
+    $stdin.read.force_encoding('ASCII-8BIT')
+  else
+    File.read(path, mode: 'rb')
+  end
+end
+
 desc 'Run the application server'
 command :server do |c|
   c.desc 'Account to initialize'
   c.arg_name :name
   c.flag [ :a, :account ]
+
+  c.desc "Account password provided via file or STDIN '-'"
+  c.arg_name "password-file"
+  c.flag ["password-file"]
 
   c.desc 'Policy file to load into the server'
   c.arg_name :path
@@ -63,7 +75,13 @@ command :server do |c|
 
     system "rake db:migrate" or exit $?.exitstatus
     if account
-      system "rake account:create[#{account}]" or exit $?.exitstatus
+      if options["password-file"]
+        password = file_input(options["password-file"])
+        system "rake account:create_with_password[#{account},#{password}]" \
+          or exit $?.exitstatus
+      else
+        system "rake account:create[#{account}]" or exit $?.exitstatus
+      end
     end
 
     if file_name = options[:file]
@@ -180,17 +198,32 @@ The CONJUR_DATA_KEY must be available in the environment
 when this command is called, since it's used to encrypt the token-signing key
 in the database.
 
+The optional 'password_file' command argument is either a file which contains
+the custom password, or the dash '-' character, which signifies
+that the password should be read from stdin.
+
 Example:
 
-$ conjurctl account create myorg
+$ conjurctl account create myorg [password_file]
   DESC
   cgrp.arg :account
+  cgrp.arg :password_file, :optional
   cgrp.command :create do |c|
     c.action do |global_options,options,args|
       account = args.first
+      args.shift
+      password_file = args.first
+
       connect
 
-      exec "rake account:create[#{account}]"
+      if password_file
+        # Reads file from path or stdin if '-'
+        password = file_input(password_file)
+
+        exec "rake account:create_with_password[#{account},#{password}]"
+      else
+        exec "rake account:create[#{account}]"
+      end
     end
   end
 
